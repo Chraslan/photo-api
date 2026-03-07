@@ -8,6 +8,20 @@ export class AppController {
 
   constructor(private readonly appService: AppService) {}
   
+  // NUEVO ENDPOINT PARA LA RAÍZ
+  @Get()
+  getRoot() {
+    return {
+      status: 'online',
+      message: 'API de fotos funcionando',
+      endpoints: {
+        photo: '/photo?id=ID',
+        debug: '/photo-debug?id=ID'
+      },
+      timestamp: new Date().toISOString()
+    };
+  }
+  
   @Get('photo')
   async getPhoto(@Query('id') id: string, @Res() res: express.Response) {
     try {
@@ -15,19 +29,13 @@ export class AppController {
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
       const imageBuffer = Buffer.from(base64Data, 'base64');
       
-      // HEADERS ANTI-CACHÉ PARA RENDER
       res.setHeader('Content-Type', 'image/jpeg');
       res.setHeader('Content-Length', imageBuffer.length);
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.setHeader('Surrogate-Control', 'no-store');
-      res.setHeader('X-Render-Origin', 'direct'); // Ayuda a Render a entender que no debe cachear
       
-      // También puedes añadir un header único para evitar caché
-      res.setHeader('X-No-Cache', Date.now().toString());
-      
-      this.logger.log(`Enviando imagen de ${imageBuffer.length} bytes con headers anti-caché`);
+      this.logger.log(`Enviando imagen de ${imageBuffer.length} bytes`);
       res.send(imageBuffer);
       
     } catch (error) {
@@ -35,12 +43,10 @@ export class AppController {
       if (error instanceof HttpException) {
         throw error;
       }
-      
       throw new HttpException('Error al mostrar la foto', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
   
-  // Endpoint de prueba para verificar headers
   @Get('photo-debug')
   async getPhotoDebug(@Query('id') id: string) {
     try {
