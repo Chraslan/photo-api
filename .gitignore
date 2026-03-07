@@ -5,5 +5,5 @@ dist
 *.log
 .vscode
 .idea
-.Dockerfile
+Dockerfile
 .dockerignore
