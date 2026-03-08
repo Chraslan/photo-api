@@ -15,7 +15,7 @@ export class AppService {
     this.updating = true;
     try {
       const res = await fetch('https://cloud.urbe.edu/web/v1/core/labComp/list');
-      const newData = JSON.parse(await res.text());
+      const newData = JSON.parse(await res.text()); 
       this.cache = null;  
       this.cache = newData;
     } catch (e) {
@@ -32,4 +32,10 @@ export class AppService {
     if (!p.fotografia?.fotografia) throw new HttpException('Sin foto', 404);
     return p.fotografia.fotografia;
   }
+  async getPerson(id: string) {
+  while (!this.cache) await new Promise(r => setTimeout(r, 100));
+  const persona = this.cache.find((p: any) => String(p.id) === String(id));
+  if (!persona) throw new HttpException('ID no encontrado', 404);
+  return persona;
+}
 }
