@@ -8,6 +8,13 @@ export class AppController {
 
   constructor(private readonly appService: AppService) {}
   
+  @Get()
+  agetPhoto(){
+    return {
+      Prueba: "Hola mundo"
+    }
+  }
+
   @Get('photo')
   async getPhoto(@Query('id') id: string) {
     try {
@@ -19,7 +26,10 @@ export class AppController {
       }
       
       // Devolver el objeto JSON completo, tal como viene de la API
-      return persona;
+      return {
+        PersonID: persona.id,
+        Photo: persona.fotografia
+      };
       
     } catch (error) {
       this.logger.error(`Error: ${error.message}`);
