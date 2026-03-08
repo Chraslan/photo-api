@@ -8,22 +8,33 @@ export class AppController {
 
   constructor(private readonly appService: AppService) {}
   
-  // NUEVO ENDPOINT PARA LA RAÍZ
-  @Get()
-  getRoot() {
-    return {
-      status: 'online',
-      message: 'API de fotos funcionando',
-      endpoints: {
-        photo: '/photo?id=ID',
-        debug: '/photo-debug?id=ID'
-      },
-      timestamp: new Date().toISOString()
-    };
+  @Get('photo')
+  async getPhoto(@Query('id') id: string) {
+    try {
+      // Obtener la persona completa del servicio (CON FOTO INCLUIDA)
+      const persona = await this.appService.getPerson(id);
+      
+      if (!persona) {
+        throw new HttpException('ID no encontrado', HttpStatus.NOT_FOUND);
+      }
+      
+      // Devolver el objeto JSON completo, tal como viene de la API
+      return persona;
+      
+    } catch (error) {
+      this.logger.error(`Error: ${error.message}`);
+      
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      
+      throw new HttpException('Error al obtener la información', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
   
-  @Get('photo')
-  async getPhoto(@Query('id') id: string, @Res() res: express.Response) {
+  // Endpoint opcional para obtener SOLO la imagen (si la necesitas)
+  @Get('photo-image')
+  async getPhotoImage(@Query('id') id: string, @Res() res: express.Response) {
     try {
       const base64Image = await this.appService.getPersonPhoto(id);
       const base64Data = base64Image.replace(/^data:image\/\w+;base64,/, '');
@@ -40,22 +51,22 @@ export class AppController {
       
     } catch (error) {
       this.logger.error(`Error: ${error.message}`);
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new HttpException('Error al mostrar la foto', HttpStatus.INTERNAL_SERVER_ERROR);
+      res.status(404).send('Imagen no encontrada');
     }
   }
   
   @Get('photo-debug')
   async getPhotoDebug(@Query('id') id: string) {
     try {
-      const base64Image = await this.appService.getPersonPhoto(id);
+      const persona = await this.appService.getPerson(id);
+      
       return { 
         success: true, 
-        message: 'Foto obtenida correctamente',
-        base64Length: base64Image.length,
-        preview: base64Image.substring(0, 100) + '...'
+        message: 'Persona encontrada',
+        id: persona.id,
+        nombre: `${persona.primerNombre} ${persona.primerApellido}`,
+        tieneFoto: !!(persona.fotografia?.fotografia),
+        fotoLength: persona.fotografia?.fotografia?.length || 0
       };
     } catch (error) {
       return { success: false, error: error.message };
